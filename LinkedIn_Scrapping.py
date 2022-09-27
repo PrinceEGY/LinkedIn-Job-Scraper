@@ -1,0 +1,194 @@
+import os
+from math import ceil
+from selenium.webdriver.common.by import By
+from selenium import webdriver
+from time import sleep
+import warnings
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+warnings.filterwarnings("ignore")
+
+
+class LinkedIn:
+    def __init__(self, search_list, count_per_job=-1, location='Worldwide'):
+        self._search_list = search_list
+        self._count_per_job = count_per_job
+        self._location = location
+        self._df = pd.DataFrame()
+
+    @property
+    def search_list(self):
+        return self._search_list
+
+    @search_list.setter
+    def search_list(self, value):
+        assert type(value) == list
+        self._search_list = value
+
+    @property
+    def count_per_job(self):
+        return self._count_per_job
+
+    @count_per_job.setter
+    def count_per_job(self, value):
+        assert type(value) == float or type(value) == int
+        self._count_per_job = value
+
+    @property
+    def location(self):
+        return self._location
+
+    @location.setter
+    def location(self, value):
+        assert type(value) == str
+        self._location = value
+
+    def open_driver(self, page_url, sleep_time=1):
+        driver = webdriver.Chrome(
+            'C:\Program Files\Google\Chrome\Application\chromedriver.exe')
+        while True:
+            try:
+                driver.get(page_url)
+                sleep(sleep_time)
+                driver.find_element_by_class_name('join-form')
+            except:
+                break
+
+        return driver
+
+    def scroll_page(self, driver, sleep_time=1):
+        same_height = 0
+        # Get scroll height
+        last_height = driver.execute_script(
+            "return document.body.scrollHeight")
+        page_top = 1
+        no_jobs = len(driver.find_elements(
+            By.CLASS_NAME, 'base-card__full-link'))
+
+        while no_jobs < self._count_per_job:
+            # Wait to load page
+            sleep(sleep_time)
+
+            # Scroll down to bottom
+            for i in range(page_top, last_height, 5):
+                driver.execute_script("window.scrollTo(0, {});".format(i))
+            try:
+                l = driver.find_element(
+                    By.XPATH, '//*[@id="main-content"]/section[2]/button')
+                driver.execute_script("arguments[0].click();", l)
+            except:
+                pass
+
+            # Calculate new scroll height and compare with last scroll height
+            new_height = driver.execute_script(
+                "return document.body.scrollHeight")
+            if new_height == last_height:
+                same_height += 1
+            else:
+                same_height = 0
+
+            # Stop If the height is the same for 5 iterations in row
+            if same_height == 10:
+                break
+
+            no_jobs = len(driver.find_elements(
+                By.CLASS_NAME, 'base-card__full-link'))
+
+            page_top = last_height
+            last_height = new_height
+
+    def get_jobs_links(self, page_url):
+        driver = self.open_driver(page_url)
+        self.scroll_page(driver)
+        links = []
+        soup = BeautifulSoup(driver.page_source)
+        driver.quit()
+        links_ls = soup.findAll('a', attrs={
+                                'class': 'base-card__full-link absolute top-0 right-0 bottom-0 left-0 p-0 z-[2]'})
+
+        for link in links_ls:
+            current_link = link['href']
+            final_link = 'https://www.linkedin.com/' + \
+                current_link[current_link.find('jobs'):]
+            links.append(final_link)
+        return links
+
+    def get_job_details(self, url):
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36'}
+        data = requests.get(url, headers=headers).text
+        soup = BeautifulSoup(data)
+        job_title = soup.find('h1').text
+        if job_title.find('(') != -1:
+            job_title = job_title[:job_title.find('(')]
+        org_name = soup.find('a', attrs={
+                             "data-tracking-control-name": "public_jobs_topcard-org-name"}).text.strip()
+        job_loc = soup.find('span', attrs={
+                            "class": "topcard__flavor topcard__flavor--bullet"}).text.strip().split(',')
+        if len(job_loc[-1].strip()) == 2:
+            job_country = 'United States'
+            job_loc = ', '.join(job_loc)
+        else:
+            job_country = job_loc[-1]
+            job_loc = ', '.join(job_loc[:-1])
+        job_desc = soup.find(
+            'div', attrs={'class': "show-more-less-html__markup"}).get_text('\n').strip()
+        post_time = soup.find(
+            'span', attrs={'class': "posted-time-ago__text"}).text.strip()
+        logo = soup.find('img', attrs={
+                         'data-ghost-classes': 'artdeco-entity-image--ghost'})['data-delayed-url']
+
+        info_label = soup.find(
+            'ul', attrs={'class': 'description__job-criteria-list'}).findAll('h3')
+        info_value = soup.find(
+            'ul', attrs={'class': 'description__job-criteria-list'}).findAll('span')
+        info_dict = {}
+        for idx in range(len(info_label)):
+            label = ' '.join(info_label[idx].text.split())
+            value = ' '.join(info_value[idx].text.split())
+            info_dict[label] = value
+
+        details = {
+            "Job Title": job_title,
+            "Organization Name": org_name,
+            "Country": job_country,
+            "City/State": job_loc,
+            "Job Description": job_desc,
+            "Post Time": post_time,
+            "Company Logo": logo}
+        details.update(info_dict)
+        details['Job Link'] = url
+        return details
+
+    def run(self, sleep_time=0.5):
+        for job in self._search_list:
+            # concatnating the job with the search link and updating the spaces by '%20'
+            print('Current searching job: ', job)
+            current_job = job.replace(' ', '%20')
+            # Job search link
+            url = f'https://www.linkedin.com/jobs/search/?location={self._location}&keywords={current_job}'
+            # getting the job's links from the page
+            links = self.get_jobs_links(url)
+            print('Number of links fetched: ', len(links))
+            # iterating over each link and getting the details
+            for link in links:
+                sleep(sleep_time)
+                try:
+                    new_df = pd.DataFrame(
+                        self.get_job_details(link), index=[0])
+                    self._df = pd.concat([self._df, new_df], ignore_index=True)
+#                     print(len(self.df), 'Jobs has fetched sucessfully')
+                except Exception as e:
+                    #                     print("job could not be fetched", str(e))
+                    pass
+        return self._df
+
+    def create_csv(self):
+        self._df.to_csv('results.xlsx', index=False, encoding='utf-8')
+
+    def create_excel(self):
+        self._df.to_excel('results.xlsx', index=False, encoding='utf-8')
+
+    def clear_df(self):
+        self._df = pd.DataFrame()
