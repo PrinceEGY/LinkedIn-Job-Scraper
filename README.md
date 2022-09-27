@@ -1,2 +1,2 @@
-# LinkedIn-Scraper
+# LinkedIn-Job-Scraper
  
