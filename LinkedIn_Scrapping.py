@@ -16,6 +16,7 @@ class LinkedIn:
         self._count_per_job = count_per_job
         self._location = location
         self._df = pd.DataFrame()
+        self._logs = ""
 
     @property
     def search_list(self):
@@ -41,7 +42,7 @@ class LinkedIn:
 
     @location.setter
     def location(self, value):
-        assert type(value) == str
+        assert type(value) == str and len(value) > 0
         self._location = value
 
     def open_driver(self, page_url, sleep_time=1):
@@ -164,13 +165,15 @@ class LinkedIn:
     def run(self, sleep_time=0.5):
         for job in self._search_list:
             # concatnating the job with the search link and updating the spaces by '%20'
-            print('Current searching job: ', job)
+            self._logs += 'Current searching job: ' + job + '\n'
+            yield self._logs
             current_job = job.replace(' ', '%20')
             # Job search link
             url = f'https://www.linkedin.com/jobs/search/?location={self._location}&keywords={current_job}'
             # getting the job's links from the page
             links = self.get_jobs_links(url)
-            print('Number of links fetched: ', len(links))
+            self._logs += 'Number of links fetched: ' + str(len(links))+'\n'
+            yield self._logs
             # iterating over each link and getting the details
             for link in links:
                 sleep(sleep_time)
@@ -178,10 +181,12 @@ class LinkedIn:
                     new_df = pd.DataFrame(
                         self.get_job_details(link), index=[0])
                     self._df = pd.concat([self._df, new_df], ignore_index=True)
-#                     print(len(self.df), 'Jobs has fetched sucessfully')
+                    self._logs += str(len(self._df)) + \
+                        ' Jobs has fetched sucessfully\n'
+                    yield self._logs
                 except Exception as e:
-                    #                     print("job could not be fetched", str(e))
-                    pass
+                    self._logs += 'job could not be fetched' + str(e)
+                    yield self._logs
         return self._df
 
     def create_csv(self):
