@@ -176,12 +176,12 @@ class LinkedIn:
         soup = BeautifulSoup(driver.page_source)
         driver.quit()
         details = {
-            "Job Titles": [],
-            "Organizations Names": [],
-            "Countries": [],
-            "Cities/States": [],
+            "Job Title": [],
+            "Organization Name": [],
+            "Country": [],
+            "City/State": [],
             "Post Time": [],
-            "Companies Logo": [],
+            "Companie Logo": [],
             "Job Link": [],
         }
 
@@ -252,7 +252,7 @@ class LinkedIn:
                             ' Jobs has fetched sucessfully\n'
                         yield self._logs
                     except Exception as e:
-                        self._logs += 'job could not be fetched' + str(e)
+                        self._logs += 'job could not be fetched ' + str(e)+'\n'
                         yield self._logs
             else:
                 new_df = pd.DataFrame(self.get_job_details_fast(url))
