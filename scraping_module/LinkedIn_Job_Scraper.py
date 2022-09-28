@@ -160,7 +160,7 @@ class LinkedIn:
 
         details = {
             "Job Title": job_title,
-            "Organization Name": org_name,
+            "Company Name": org_name,
             "Country": job_country,
             "City/State": job_loc,
             "Job Description": job_desc,
@@ -177,11 +177,11 @@ class LinkedIn:
         driver.quit()
         details = {
             "Job Title": [],
-            "Organization Name": [],
+            "Company Name": [],
             "Country": [],
             "City/State": [],
             "Post Time": [],
-            "Companie Logo": [],
+            "Company Logo": [],
             "Job Link": [],
         }
 
@@ -205,10 +205,10 @@ class LinkedIn:
 
             if job_title.find('(') != -1:
                 job_title = job_title[:job_title.find('(')]
-            details['Job Titles'].append(job_title)
-            details['Organizations Names'].append(org_name)
-            details['Countries'].append(job_country)
-            details['Cities/States'].append(job_loc)
+            details['Job Title'].append(job_title)
+            details['Company Name'].append(org_name)
+            details['Country'].append(job_country)
+            details['City/State'].append(job_loc)
             details['Post Time'].append(post_time)
 
         for logo in logos:
@@ -219,7 +219,7 @@ class LinkedIn:
             except:
                 job_logo = job_logo['data-delayed-url']
 
-            details['Companies Logo'].append(job_logo)
+            details['Company Logo'].append(job_logo)
 
         for link in links:
             details['Job Link'].append(link['href'])
