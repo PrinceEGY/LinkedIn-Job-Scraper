@@ -1,13 +1,6 @@
-from LinkedIn_Scrapping import LinkedIn
+from scraping_module import LinkedIn
 import streamlit as st
-import os
-from math import ceil
-from selenium.webdriver.common.by import By
-from selenium import webdriver
-from time import sleep
 import warnings
-import requests
-from bs4 import BeautifulSoup
 import pandas as pd
 warnings.filterwarnings("ignore")
 
@@ -37,16 +30,35 @@ def get_inputs():
                 },
                 </style>
         """, unsafe_allow_html=True)
-        st.title('LinkedIn Scraper',)
+        st.title('LinkedIn Scraper')
+        with st.expander('About the tool', expanded=True):
+            st.header(
+                'Scrape public available jobs on Linkedin.')
+            st.markdown("""
+        For each job the following fields are extracted:
+        
+        Job Title, Organization Name, Country, City/State, Job Description,
+        Post Time, Company Logo, Seniority Level, Employoment Type, Job Function, Industries. Job Link.
+        
+        **Author: Ahmed Mohsen ([LinkedIn](https://www.linkedin.com/in/AhmedMohsen-))**
+        
+        You can see the steps of building the scraper, on my GitHub repo [here](https://github.com/PrinceEGY/LinkedIn-Job-Scraper). 
+        """)
         jobs = st.text_area('Jobs (One job per row)',
                             placeholder="Job/Field Title...").split('\n')
         count_jobs = st.number_input(
             'Count per Job', step=1, min_value=1, value=25)
         loc = st.text_input('Location', placeholder="Country/City name...",)
+        option = st.radio('Fetch Method', options=[
+                          'Fast fetch', 'Slow fetch'], horizontal=True, help='''
+                          Fast fetch: fetch less information with fast speed, the information that will
+                           not be fetched (Job Description, Seniority level, Employment type, Job function and Industries)
+                          ''')
 
         return {'search_list': jobs,
                 'count_per_job': count_jobs,
-                'location': loc
+                'location': loc,
+                'method': 'fast' if option == 'Fast fetch' else 'slow'
                 }
 
 
@@ -60,7 +72,6 @@ with results:
         st.session_state.df = pd.DataFrame()
     if 'logs' not in st.session_state:
         st.session_state.logs = ""
-
     st.dataframe(st.session_state.df)
     st.download_button(
         "Download CSV file",
@@ -69,6 +80,7 @@ with results:
         "text/csv",
         key='download-csv'
     )
+    st.button('Refresh')
     with st.expander('Logs', expanded=True):
         placeholder = st.empty()
         placeholder.code(st.session_state.logs)
@@ -82,7 +94,7 @@ with results:
         except:
             pass
 
-        for i in a.run():
+        for i in a.run(method=user_inputs['method']):
             placeholder.empty()
             st.session_state.logs = i
             placeholder.code(st.session_state.logs)

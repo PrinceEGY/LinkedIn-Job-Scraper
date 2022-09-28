@@ -105,8 +105,8 @@ class LinkedIn:
         links = []
         soup = BeautifulSoup(driver.page_source)
         driver.quit()
-        links_ls = soup.findAll('a', attrs={
-                                'class': 'base-card__full-link absolute top-0 right-0 bottom-0 left-0 p-0 z-[2]'})
+        links_ls = soup.findAll(
+            'a', attrs={'data-tracking-control-name': 'public_jobs_jserp-result_search-card'})
 
         for link in links_ls:
             current_link = link['href']
@@ -162,7 +162,63 @@ class LinkedIn:
         details['Job Link'] = url
         return details
 
-    def run(self, sleep_time=0.5):
+    def get_job_details_fast(self, page_url):
+        driver = self.open_driver(page_url)
+        self.scroll_page(driver)
+        soup = BeautifulSoup(driver.page_source)
+        driver.quit()
+        details = {
+            "Job Titles": [],
+            "Organizations Names": [],
+            "Countries": [],
+            "Cities/States": [],
+            "Post Time": [],
+            "Companies Logo": [],
+            "Job Link": [],
+        }
+
+        jobs = soup.findAll('div', attrs={'class': 'base-search-card__info'})
+        logos = soup.findAll('div', attrs={'class': 'search-entity-media'})
+        links = soup.findAll(
+            'a', attrs={'data-tracking-control-name': 'public_jobs_jserp-result_search-card'})
+        for job in jobs:
+            job_title = job.find('h3').text.strip()
+            org_name = job.find(
+                'h4', attrs={'class': 'base-search-card__subtitle'}).text.strip()
+            job_loc = job.find(
+                'span', attrs={'class': 'job-search-card__location'}).text.strip().split(',')
+            if len(job_loc[-1].strip()) == 2:
+                job_country = 'United States'
+                job_loc = ', '.join(job_loc)
+            else:
+                job_country = job_loc[-1]
+                job_loc = ', '.join(job_loc[:-1])
+            post_time = job.find('time')['datetime']
+
+            if job_title.find('(') != -1:
+                job_title = job_title[:job_title.find('(')]
+            details['Job Titles'].append(job_title)
+            details['Organizations Names'].append(org_name)
+            details['Countries'].append(job_country)
+            details['Cities/States'].append(job_loc)
+            details['Post Time'].append(post_time)
+
+        for logo in logos:
+            job_logo = logo.find(
+                'img', attrs={'data-ghost-classes': 'artdeco-entity-image--ghost'})
+            try:
+                job_logo = job_logo['src']
+            except:
+                job_logo = job_logo['data-delayed-url']
+
+            details['Companies Logo'].append(job_logo)
+
+        for link in links:
+            details['Job Link'].append(link['href'])
+
+        return details
+
+    def run(self, sleep_time=0.5, method='fast'):
         for job in self._search_list:
             # concatnating the job with the search link and updating the spaces by '%20'
             self._logs += 'Current searching job: ' + job + '\n'
@@ -170,23 +226,34 @@ class LinkedIn:
             current_job = job.replace(' ', '%20')
             # Job search link
             url = f'https://www.linkedin.com/jobs/search/?location={self._location}&keywords={current_job}'
-            # getting the job's links from the page
-            links = self.get_jobs_links(url)
-            self._logs += 'Number of links fetched: ' + str(len(links))+'\n'
-            yield self._logs
-            # iterating over each link and getting the details
-            for link in links:
-                sleep(sleep_time)
-                try:
-                    new_df = pd.DataFrame(
-                        self.get_job_details(link), index=[0])
-                    self._df = pd.concat([self._df, new_df], ignore_index=True)
-                    self._logs += str(len(self._df)) + \
-                        ' Jobs has fetched sucessfully\n'
-                    yield self._logs
-                except Exception as e:
-                    self._logs += 'job could not be fetched' + str(e)
-                    yield self._logs
+            if method == 'slow':
+                # getting the job's links from the page
+                links = self.get_jobs_links(url)
+                self._logs += 'Number of links fetched: ' + \
+                    str(len(links))+'\n'
+                yield self._logs
+                # iterating over each link and getting the details
+                for link in links:
+                    sleep(sleep_time)
+                    try:
+                        new_df = pd.DataFrame(
+                            self.get_job_details(link), index=[0])
+                        self._df = pd.concat(
+                            [self._df, new_df], ignore_index=True)
+                        self._logs += str(len(self._df)) + \
+                            ' Jobs has fetched sucessfully\n'
+                        yield self._logs
+                    except Exception as e:
+                        self._logs += 'job could not be fetched' + str(e)
+                        yield self._logs
+            else:
+                new_df = pd.DataFrame(self.get_job_details_fast(url))
+                self._df = pd.concat(
+                    [self._df, new_df], ignore_index=True)
+                self._logs += str(len(new_df)) + \
+                    ' Jobs has fetched sucessfully\n'
+                yield self._logs
+
         return self._df
 
     def create_csv(self):
