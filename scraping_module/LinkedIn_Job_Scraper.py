@@ -1,6 +1,8 @@
-import os
-from math import ceil
 from selenium.webdriver.common.by import By
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
+from webdriver_manager.firefox import GeckoDriverManager
 from selenium import webdriver
 from time import sleep
 import warnings
@@ -46,8 +48,14 @@ class LinkedIn:
         self._location = value
 
     def open_driver(self, page_url, sleep_time=1):
-        driver = webdriver.Chrome(
-            'C:\Program Files\Google\Chrome\Application\chromedriver.exe')
+        firefoxOptions = Options()
+        firefoxOptions.add_argument("--headless")
+        service = Service(GeckoDriverManager().install())
+        driver = webdriver.Firefox(
+            options=firefoxOptions,
+            service=service,
+        )
+
         while True:
             try:
                 driver.get(page_url)
