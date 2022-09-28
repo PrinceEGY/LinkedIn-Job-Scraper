@@ -2,4 +2,3 @@ warnings
 bs4
 requests
 pandas
-selenium~=4.4.3
