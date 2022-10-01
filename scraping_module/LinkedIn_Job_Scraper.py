@@ -265,7 +265,8 @@ class LinkedIn:
                 self._logs += str(len(new_df)) + \
                     ' Jobs has fetched sucessfully\n'
                 yield self._logs
-
+        self._logs += f'Total number of jobs fetched {len(self._df)}\nDone. (Click Refresh button to see results\n'
+        yield self._logs
         return self._df
 
     def create_csv(self):
