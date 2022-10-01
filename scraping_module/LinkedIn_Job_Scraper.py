@@ -224,7 +224,7 @@ class LinkedIn:
         for link in links:
             details['Job Link'].append(link['href'])
 
-        return details
+        return details[:self.count_per_job]
 
     def run(self, sleep_time=0.5, method='fast'):
         for job in self._search_list:
@@ -255,6 +255,8 @@ class LinkedIn:
                         self._logs += 'job could not be fetched ' + str(e)+'\n'
                         yield self._logs
             else:
+                self._logs += 'Fetching jobs... \n'
+                yield self._logs
                 new_df = pd.DataFrame(self.get_job_details_fast(url))
                 self._df = pd.concat(
                     [self._df, new_df], ignore_index=True)
