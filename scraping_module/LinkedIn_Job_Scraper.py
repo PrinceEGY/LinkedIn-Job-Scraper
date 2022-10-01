@@ -236,6 +236,8 @@ class LinkedIn:
             url = f'https://www.linkedin.com/jobs/search/?location={self._location}&keywords={current_job}'
             if method == 'slow':
                 # getting the job's links from the page
+                self._logs += 'Getting jobs URLs.... \n'
+                yield self._logs
                 links = self.get_jobs_links(url)
                 self._logs += 'Number of links fetched: ' + \
                     str(len(links))+'\n'
