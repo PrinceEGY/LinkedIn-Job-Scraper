@@ -47,7 +47,7 @@ def get_inputs():
         jobs = st.text_area('Jobs (One job per row)',
                             placeholder="Job/Field Title...").split('\n')
         count_jobs = st.number_input(
-            'Count per Job', step=1, min_value=1, value=25, help='Type -1 for as many as possible count')
+            'Count per Job', step=1, min_value=-1, value=25, help='Type -1 for as many as possible count')
         loc = st.text_input('Location', placeholder="Country/City name...",
                             help='Leave empty for WorldWide search')
         option = st.radio('Fetch Method', options=[

@@ -254,7 +254,8 @@ class LinkedIn:
                             ' Jobs has fetched sucessfully\n'
                         yield self._logs
                     except Exception as e:
-                        self._logs += 'job could not be fetched ' + str(e)+'\n'
+                        # self._logs += 'job could not be fetched ' + str(e)+'\n'
+                        self._logs += 'job could not be fetched \n'
                         yield self._logs
             else:
                 self._logs += 'Fetching jobs... \n'
