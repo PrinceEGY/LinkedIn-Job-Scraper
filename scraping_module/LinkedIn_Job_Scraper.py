@@ -75,7 +75,7 @@ class LinkedIn:
         no_jobs = len(driver.find_elements(
             By.CLASS_NAME, 'base-card__full-link'))
 
-        while no_jobs < self._count_per_job:
+        while no_jobs < self._count_per_job or self._count_per_job == -1:
             # Wait to load page
             sleep(sleep_time)
 
