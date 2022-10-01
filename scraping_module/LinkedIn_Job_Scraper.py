@@ -189,7 +189,7 @@ class LinkedIn:
         logos = soup.findAll('div', attrs={'class': 'search-entity-media'})
         links = soup.findAll(
             'a', attrs={'data-tracking-control-name': 'public_jobs_jserp-result_search-card'})
-        for job in jobs:
+        for job in jobs[:self.count_per_job]:
             job_title = job.find('h3').text.strip()
             org_name = job.find(
                 'h4', attrs={'class': 'base-search-card__subtitle'}).text.strip()
@@ -211,7 +211,7 @@ class LinkedIn:
             details['City/State'].append(job_loc)
             details['Post Time'].append(post_time)
 
-        for logo in logos:
+        for logo in logos[:self.count_per_job]:
             job_logo = logo.find(
                 'img', attrs={'data-ghost-classes': 'artdeco-entity-image--ghost'})
             try:
@@ -221,10 +221,10 @@ class LinkedIn:
 
             details['Company Logo'].append(job_logo)
 
-        for link in links:
+        for link in links[:self.count_per_job]:
             details['Job Link'].append(link['href'])
 
-        return details[:self.count_per_job]
+        return details
 
     def run(self, sleep_time=0.5, method='fast'):
         for job in self._search_list:
