@@ -243,9 +243,10 @@ class LinkedIn:
                     str(len(links))+'\n'
                 yield self._logs
                 # iterating over each link and getting the details
+                ctr = 0
                 for link in links:
                     sleep(sleep_time)
-                    if len(self._df) == self.count_per_job:
+                    if ctr == self.count_per_job:
                         break
                     try:
                         new_df = pd.DataFrame(
@@ -255,6 +256,7 @@ class LinkedIn:
                         self._logs += str(len(self._df)) + \
                             ' Jobs has fetched sucessfully\n'
                         yield self._logs
+                        ctr += 1
                     except Exception as e:
                         # self._logs += 'job could not be fetched ' + str(e)+'\n'
                         self._logs += 'job could not be fetched \n'
