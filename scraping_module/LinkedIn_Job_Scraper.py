@@ -243,8 +243,10 @@ class LinkedIn:
                     str(len(links))+'\n'
                 yield self._logs
                 # iterating over each link and getting the details
-                for link in links[:self.count_per_job]:
+                for link in links:
                     sleep(sleep_time)
+                    if len(self._df) == self.count_per_job:
+                        break
                     try:
                         new_df = pd.DataFrame(
                             self.get_job_details(link), index=[0])
