@@ -253,10 +253,10 @@ class LinkedIn:
                             self.get_job_details(link), index=[0])
                         self._df = pd.concat(
                             [self._df, new_df], ignore_index=True)
-                        self._logs += str(len(self._df)) + \
+                        ctr += 1
+                        self._logs += str(ctr) + \
                             ' Jobs has fetched sucessfully\n'
                         yield self._logs
-                        ctr += 1
                     except Exception as e:
                         # self._logs += 'job could not be fetched ' + str(e)+'\n'
                         self._logs += 'job could not be fetched \n'
