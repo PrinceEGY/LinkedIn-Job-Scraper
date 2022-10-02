@@ -101,3 +101,4 @@ with results:
             placeholder.code(st.session_state.logs)
         csv = convert_df(a._df)
         st.session_state.df = a._df
+        st.empty()
